@@ -40,6 +40,13 @@ class Usuario extends Authenticatable
         'email_verificado_en' => 'datetime',
     ];
 
+    public function routeNotificationForMail(mixed $notification = null): ?string
+    {
+        $correo = is_string($this->correo ?? null) ? trim((string) $this->correo) : '';
+
+        return $correo !== '' ? $correo : null;
+    }
+
     public function getRouteKeyName(): string
     {
         return $this->getKeyName();

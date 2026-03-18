@@ -49,7 +49,7 @@ class AuthController extends Controller
 
         if ($requireVerification) {
             $token = $this->issueEmailVerificationToken($usuario, $request);
-            $this->sendEmailVerification($usuario, $token);
+            $this->sendEmailVerification($usuario, $token, $request);
 
             $response = [
                 'verification_required' => true,
@@ -189,7 +189,7 @@ class AuthController extends Controller
         }
 
         $token = $this->issueEmailVerificationToken($usuario, $request);
-        $this->sendEmailVerification($usuario, $token);
+        $this->sendEmailVerification($usuario, $token, $request);
 
         HistorialLogger::log($usuario->getKey(), 'email_verificacion_reenviada', 'usuarios', (string) $usuario->getKey(), 'Reenvío de verificación', null, null);
 
@@ -222,7 +222,7 @@ class AuthController extends Controller
         ]);
 
         if ($usuario) {
-            $this->sendPasswordRecovery($usuario, $token);
+            $this->sendPasswordRecovery($usuario, $token, $request);
         }
 
         HistorialLogger::log($usuario?->getKey(), 'password_recovery_solicitada', 'usuarios', $usuario ? (string) $usuario->getKey() : null, 'Solicitud de recuperación', null, null);
@@ -348,9 +348,9 @@ class AuthController extends Controller
         return $token;
     }
 
-    private function sendEmailVerification(Usuario $usuario, string $token): void
+    private function sendEmailVerification(Usuario $usuario, string $token, Request $request): void
     {
-        $frontendBase = rtrim((string) env('ASUP_FRONTEND_URL', ''), '/');
+        $frontendBase = $this->resolveFrontendBase($request);
         if ($frontendBase !== '') {
             $url = $frontendBase.'/verify-email?token='.urlencode($token);
             $usuario->notify(new VerifyEmailNotification($url, $this->emailVerificationExpiresMinutes()));
@@ -360,16 +360,16 @@ class AuthController extends Controller
 
         $apiBase = env('ASUP_API_PUBLIC_URL');
         if (! is_string($apiBase) || trim($apiBase) === '') {
-            $apiBase = rtrim((string) env('APP_URL', ''), '/').'/public/api';
+            $apiBase = rtrim($request->getSchemeAndHttpHost(), '/').'/public/api';
         }
 
         $url = rtrim((string) $apiBase, '/').'/auth/verify-email?token='.urlencode($token);
         $usuario->notify(new VerifyEmailNotification($url, $this->emailVerificationExpiresMinutes()));
     }
 
-    private function sendPasswordRecovery(Usuario $usuario, string $token): void
+    private function sendPasswordRecovery(Usuario $usuario, string $token, Request $request): void
     {
-        $frontendBase = rtrim((string) env('ASUP_FRONTEND_URL', ''), '/');
+        $frontendBase = $this->resolveFrontendBase($request);
         if ($frontendBase !== '') {
             $url = $frontendBase.'/reset-password?token='.urlencode($token);
             $usuario->notify(new PasswordRecoveryNotification($url, $this->passwordRecoveryExpiresMinutes()));
@@ -379,10 +379,47 @@ class AuthController extends Controller
 
         $apiBase = env('ASUP_API_PUBLIC_URL');
         if (! is_string($apiBase) || trim($apiBase) === '') {
-            $apiBase = rtrim((string) env('APP_URL', ''), '/').'/public/api';
+            $apiBase = rtrim($request->getSchemeAndHttpHost(), '/').'/public/api';
         }
 
         $url = rtrim((string) $apiBase, '/').'/auth/reset-password?token='.urlencode($token);
         $usuario->notify(new PasswordRecoveryNotification($url, $this->passwordRecoveryExpiresMinutes()));
+    }
+
+    private function resolveFrontendBase(Request $request): string
+    {
+        $fromEnv = rtrim((string) env('ASUP_FRONTEND_URL', ''), '/');
+        if ($fromEnv !== '') {
+            return $fromEnv;
+        }
+
+        $origin = $request->headers->get('origin');
+        if (is_string($origin)) {
+            $origin = trim($origin);
+            if ($origin !== '' && preg_match('#^https?://#i', $origin)) {
+                return rtrim($origin, '/');
+            }
+        }
+
+        $referer = $request->headers->get('referer');
+        if (is_string($referer)) {
+            $referer = trim($referer);
+            if ($referer !== '' && preg_match('#^https?://#i', $referer)) {
+                $parts = parse_url($referer);
+                $scheme = is_array($parts) ? ($parts['scheme'] ?? null) : null;
+                $host = is_array($parts) ? ($parts['host'] ?? null) : null;
+                $port = is_array($parts) ? ($parts['port'] ?? null) : null;
+                if (is_string($scheme) && is_string($host)) {
+                    $base = $scheme.'://'.$host;
+                    if (is_int($port)) {
+                        $base .= ':'.$port;
+                    }
+
+                    return rtrim($base, '/');
+                }
+            }
+        }
+
+        return '';
     }
 }
