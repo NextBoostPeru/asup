@@ -57,7 +57,7 @@ class RepresentanteController extends Controller
         $data = $request->validate([
             'nombres' => ['sometimes', 'required', 'string', 'max:150'],
             'apellidos' => ['sometimes', 'required', 'string', 'max:150'],
-            'dni' => ['sometimes', 'required', 'digits:8', 'unique:representantes,dni,' . $representante->getKey() . ',id_representante'],
+            'dni' => ['sometimes', 'required', 'digits:8', 'unique:representantes,dni,'.$representante->getKey().',id_representante'],
             'universidad' => ['sometimes', 'nullable', 'string', 'max:200'],
             'celular' => ['sometimes', 'nullable', 'string', 'max:15'],
             'correo' => ['sometimes', 'nullable', 'email', 'max:150'],

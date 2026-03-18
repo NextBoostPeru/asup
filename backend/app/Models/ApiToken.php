@@ -10,6 +10,7 @@ class ApiToken extends Model
     protected $table = 'api_tokens';
 
     const CREATED_AT = 'fecha_creacion';
+
     const UPDATED_AT = 'fecha_actualizacion';
 
     protected $fillable = [

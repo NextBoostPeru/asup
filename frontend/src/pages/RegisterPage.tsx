@@ -5,22 +5,25 @@ import { ApiError, apiRegister, getAuthToken, setAuthToken } from '../lib/api'
 export function RegisterPage() {
   const navigate = useNavigate()
   const [nombres, setNombres] = useState('')
+  const [apellidos, setApellidos] = useState('')
   const [correo, setCorreo] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [info, setInfo] = useState<string | null>(null)
 
   const passwordsMatch = password.length > 0 && password === confirmPassword
 
   const canSubmit = useMemo(() => {
     const nombresOk = nombres.trim().length >= 3
+    const apellidosOk = apellidos.trim().length >= 3
     const emailOk = correo.trim().length > 0
     const passwordOk = password.length >= 8
     const confirmOk = confirmPassword.length > 0
-    return nombresOk && emailOk && passwordOk && confirmOk && passwordsMatch && !submitting
-  }, [nombres, correo, password, confirmPassword, passwordsMatch, submitting])
+    return nombresOk && apellidosOk && emailOk && passwordOk && confirmOk && passwordsMatch && !submitting
+  }, [nombres, apellidos, correo, password, confirmPassword, passwordsMatch, submitting])
 
   useEffect(() => {
     if (getAuthToken()) navigate('/', { replace: true })
@@ -32,15 +35,28 @@ export function RegisterPage() {
 
     setSubmitting(true)
     setError(null)
+    setInfo(null)
 
     try {
       const res = await apiRegister({
         nombres: nombres.trim(),
+        apellidos: apellidos.trim(),
         correo: correo.trim(),
         password,
       })
-      setAuthToken(res.token)
-      navigate('/', { replace: true })
+      if ('token' in res && typeof res.token === 'string') {
+        setAuthToken(res.token)
+        navigate('/', { replace: true })
+        return
+      }
+
+      if ('verification_required' in res && res.verification_required) {
+        setInfo('Revisa tu correo para confirmar la cuenta antes de iniciar sesión.')
+        navigate('/login', { replace: true })
+        return
+      }
+
+      setError('No se pudo completar el registro.')
     } catch (err: unknown) {
       setError(getErrorMessage(err))
     } finally {
@@ -69,22 +85,46 @@ export function RegisterPage() {
           </div>
         ) : null}
 
+        {info ? (
+          <div className="mb-4 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700">
+            {info}
+          </div>
+        ) : null}
+
         <form className="grid gap-4" onSubmit={onSubmit}>
-          <div className="grid gap-1.5">
-            <label className="text-sm font-medium text-slate-800" htmlFor="nombres">
-              Nombres
-            </label>
-            <input
-              id="nombres"
-              className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-slate-900 placeholder:text-slate-400 focus:border-slate-300 focus:outline-none focus:ring-4 focus:ring-slate-100"
-              type="text"
-              autoComplete="name"
-              placeholder="Tu nombre completo"
-              value={nombres}
-              onChange={(e) => setNombres(e.target.value)}
-              disabled={submitting}
-              required
-            />
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-1.5">
+              <label className="text-sm font-medium text-slate-800" htmlFor="nombres">
+                Nombres
+              </label>
+              <input
+                id="nombres"
+                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-slate-900 placeholder:text-slate-400 focus:border-slate-300 focus:outline-none focus:ring-4 focus:ring-slate-100"
+                type="text"
+                autoComplete="given-name"
+                placeholder="Tus nombres"
+                value={nombres}
+                onChange={(e) => setNombres(e.target.value)}
+                disabled={submitting}
+                required
+              />
+            </div>
+            <div className="grid gap-1.5">
+              <label className="text-sm font-medium text-slate-800" htmlFor="apellidos">
+                Apellidos
+              </label>
+              <input
+                id="apellidos"
+                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-slate-900 placeholder:text-slate-400 focus:border-slate-300 focus:outline-none focus:ring-4 focus:ring-slate-100"
+                type="text"
+                autoComplete="family-name"
+                placeholder="Tus apellidos"
+                value={apellidos}
+                onChange={(e) => setApellidos(e.target.value)}
+                disabled={submitting}
+                required
+              />
+            </div>
           </div>
 
           <div className="grid gap-1.5">

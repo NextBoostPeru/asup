@@ -10,9 +10,11 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Representante extends Model
 {
     protected $table = 'representantes';
+
     protected $primaryKey = 'id_representante';
 
     const CREATED_AT = 'fecha_creacion';
+
     const UPDATED_AT = 'fecha_actualizacion';
 
     protected $fillable = [

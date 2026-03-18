@@ -8,7 +8,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class Historial extends Model
 {
     protected $table = 'historial';
+
     protected $primaryKey = 'id_historial';
+
     public $timestamps = false;
 
     protected $fillable = [

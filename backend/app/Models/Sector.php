@@ -8,9 +8,11 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Sector extends Model
 {
     protected $table = 'sectores';
+
     protected $primaryKey = 'id_sector';
 
     const CREATED_AT = 'fecha_creacion';
+
     const UPDATED_AT = 'fecha_actualizacion';
 
     protected $fillable = [

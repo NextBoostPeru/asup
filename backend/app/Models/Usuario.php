@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -11,18 +12,23 @@ class Usuario extends Authenticatable
     use Notifiable;
 
     protected $table = 'usuarios';
+
     protected $primaryKey = 'id_usuario';
 
     const CREATED_AT = 'fecha_creacion';
+
     const UPDATED_AT = 'fecha_actualizacion';
 
     protected $fillable = [
         'nombres',
+        'apellidos',
         'correo',
         'password',
         'rol',
+        'id_rol',
         'estado',
         'ultimo_acceso',
+        'email_verificado_en',
     ];
 
     protected $hidden = [
@@ -31,6 +37,7 @@ class Usuario extends Authenticatable
 
     protected $casts = [
         'ultimo_acceso' => 'datetime',
+        'email_verificado_en' => 'datetime',
     ];
 
     public function getRouteKeyName(): string
@@ -46,5 +53,10 @@ class Usuario extends Authenticatable
     public function apiTokens(): HasMany
     {
         return $this->hasMany(ApiToken::class, 'id_usuario', 'id_usuario');
+    }
+
+    public function rolDetalle(): BelongsTo
+    {
+        return $this->belongsTo(Rol::class, 'id_rol', 'id_rol');
     }
 }

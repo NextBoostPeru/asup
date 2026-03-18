@@ -8,7 +8,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class DocumentoRepresentante extends Model
 {
     protected $table = 'documentos_representante';
+
     protected $primaryKey = 'id_documento';
+
     public $timestamps = false;
 
     protected $fillable = [
